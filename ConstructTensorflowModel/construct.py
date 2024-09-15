@@ -20,13 +20,14 @@ path_to_train = 'samples/train'
 path_to_test = 'samples/test'
 detection_elements = ['specimen_block_red','specimen_block_blue','specimen_block_yellow']
 
-# Declare Training and Testing Datasets
+# Declare Training Dataset (what the model will train upon)
 train_dataset = object_detector.DataLoader.from_pascal_voc(
 	path_to_train,
 	path_to_train,
 	detection_elements
 )
 
+# Declare Testing Dataset (what the model will use to predict)
 test_dataset = object_detector.DataLoader.from_pascal_voc(
 	path_to_test,
 	path_to_test,
