@@ -163,3 +163,5 @@ cython_debug/
 
 # Robotics
 *.db
+/media/*
+!/media/.placeholder
