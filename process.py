@@ -1,8 +1,10 @@
 import shutil
-from math import atan2, atan
+from math import atan
 from pathlib import Path
+from typing import cast
 
 import cv2 as cv
+import numpy
 import numpy as np
 from cv2.typing import MatLike
 from rich.console import Console
@@ -52,22 +54,24 @@ def process(fp: Path, display: bool):
     canned = cv.Canny(gray, 50, 200)
     canned_roi = cv.bitwise_and(canned, canned, mask=larger)
     annotated = image.copy()
-    lines = cv.HoughLinesP(canned_roi, 10, np.pi/180, 10, minLineLength=80, maxLineGap=10)
+    lines = cv.HoughLinesP(canned_roi, 10, np.pi / 180, 10, minLineLength=80, maxLineGap=10)
     drawn = 0
     if lines is not None:
         N = lines.shape[0]
         for i in range(N):
-            x1 = lines[i][0][0]
-            y1 = lines[i][0][1]
-            x2 = lines[i][0][2]
-            y2 = lines[i][0][3]
-            if (x2 - x1) == 0: continue
-            angle = atan((y2-y1)/(x2-x1))
-            if abs(angle) > 0.174532925: continue
+            x1 = cast(int, lines[i][0][0])
+            y1 = cast(int, lines[i][0][1])
+            x2 = cast(int, lines[i][0][2])
+            y2 = cast(int, lines[i][0][3])
+            if (x2 - x1) == 0:
+                continue
+            angle = atan((y2 - y1) / (x2 - x1))
+            if abs(angle) > 0.174532925:
+                continue
             drawn += 1
-            cv.line(annotated, (x1, y1), (x2, y2), (255, 0, 0), 2)
+            cv.line(annotated, [x1, y1], [x2, y2], [255, 0, 0], 2)
     if drawn == 0:
-        cv.putText(annotated, "no matches", (100,100), 0, fontScale=2, color=(0, 0, 255), thickness=4)
+        cv.putText(annotated, "no matches", (100, 100), 0, fontScale=2, color=(0, 0, 255), thickness=4)
 
     imshow("grayscale", gray)
     imshow("hsv", hsv)
@@ -75,7 +79,7 @@ def process(fp: Path, display: bool):
     imshow("GrayscaleM", blackish)
     imshow("annotated", annotated)
     out("annotated", annotated)
-    #out("mask", blackish)
+    # out("mask", blackish)
     # out("edge", canned)
     if display:
         while cv.waitKey(0) != 27: pass
