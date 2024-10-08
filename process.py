@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import cast
 
 import cv2 as cv
+import cv2.typing
 import numpy
 import numpy as np
 from cv2.typing import MatLike
@@ -17,6 +18,59 @@ INPUTS = list(INPUT_DIR.glob("*.png"))
 OUTPUT_DIR = Path("output")
 shutil.rmtree(OUTPUT_DIR, ignore_errors=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def stripesAlgorithm(fp: Path, display: bool):
+    def imshow(name: str, image: MatLike):
+        if display:
+            cv.imshow(name, image)
+
+    def out(name: str, image: MatLike):
+        if not display:
+            out_to = OUTPUT_DIR / fp.relative_to(INPUT_DIR)
+            out_to = out_to.with_name(out_to.stem + f"_{name}.png")
+            rp(f"[bright_cyan]    [bold]Output[/] {name}[/] [bright_black]to[/] [cyan]{out_to}[/]")
+            cv.imwrite(str(out_to), image)
+
+    def stop():
+        if display:
+            cv.destroyAllWindows()
+
+    original = cv.imread(str(fp))
+    compressed = cv.resize(original, (0, 0), fx=0.5, fy=0.5)
+    hsv = cv.cvtColor(compressed, cv.COLOR_BGR2HSV)
+    grey = cv.cvtColor(compressed, cv.COLOR_BGR2GRAY)
+
+    min_len = 64
+    lower_bound = 0
+    upper_bound = 64
+
+    set_a = grey >= lower_bound
+    set_b = grey <= upper_bound
+    both = np.bitwise_and(set_a, set_b)
+
+    output_bin = np.zeros(grey.shape, np.uint8)
+
+    for i, row in enumerate(both):
+        active = False
+        start_at = 0
+        for j, pos in enumerate(row):
+            if pos and not active:
+                start_at = j
+                active = True
+            if not pos and active:
+                active = False
+                length = j - start_at
+                if length > min_len:
+                    output_bin[i, start_at:j] = [255] * length
+
+    imshow('original', compressed)
+    imshow('result', output_bin)
+    out('result', output_bin)
+
+    if display:
+        while cv.waitKey(0) != 27: pass
+    stop()
 
 
 def process(fp: Path, display: bool):
@@ -91,9 +145,10 @@ def main():
     bulk = True
     if bulk:
         for file in INPUTS:
-            process(file, False)
+            stripesAlgorithm(file, False)
     else:
-        process(INPUTS[0], True)
+        file = next(x for x in INPUTS if 'blue_v2' in x.stem)
+        stripesAlgorithm(file, True)
 
 
 if __name__ == '__main__':
