@@ -64,9 +64,30 @@ def stripesAlgorithm(fp: Path, display: bool):
                 if length > min_len:
                     output_bin[i, start_at:j] = [255] * length
 
+    rgb = np.stack((output_bin, output_bin, output_bin), axis=2)
+
+    lines = cv.HoughLinesP(output_bin, 10, np.pi / 360, 10, minLineLength=400, maxLineGap=40)
+    drawn = 0
+    if lines is not None:
+        N = lines.shape[0]
+        for i in range(N):
+            x1 = cast(int, lines[i][0][0])
+            y1 = cast(int, lines[i][0][1])
+            x2 = cast(int, lines[i][0][2])
+            y2 = cast(int, lines[i][0][3])
+            if (x2 - x1) == 0:
+                continue
+            angle = atan((y2 - y1) / (x2 - x1))
+            if abs(angle) > 0.174532925:
+                continue
+            drawn += 1
+            cv.line(rgb, [x1, y1], [x2, y2], [255, 0, 0], 2)
+    if drawn == 0:
+        cv.putText(rgb, "no matches", (100, 100), 0, fontScale=2, color=(0, 0, 255), thickness=4)
+
     imshow('original', compressed)
-    imshow('result', output_bin)
-    out('result', output_bin)
+    imshow('result', rgb)
+    out('result', rgb)
 
     if display:
         while cv.waitKey(0) != 27: pass
