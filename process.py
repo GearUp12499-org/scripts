@@ -1,11 +1,10 @@
+import math
 import shutil
 from math import atan
 from pathlib import Path
-from typing import cast
+from typing import cast, Literal
 
 import cv2 as cv
-import cv2.typing
-import numpy
 import numpy as np
 from cv2.typing import MatLike
 from rich.console import Console
@@ -24,6 +23,13 @@ def stripesAlgorithm(fp: Path, display: bool):
     def imshow(name: str, image: MatLike):
         if display:
             cv.imshow(name, image)
+
+    def out_file(name: str, mode: Literal["w"] | Literal["wb"] | Literal["a"] | Literal["ab"]):
+        path = OUTPUT_DIR / fp.relative_to(INPUT_DIR)
+        path = path.with_name(path.stem + f"_{name}")
+        handle = open(path, mode)
+        rp(f"[bright_yellow]    [bold]Output[/] {name}[/] [bright_black]to[/] [yellow]{path}[/]")
+        return handle
 
     def out(name: str, image: MatLike):
         if not display:
